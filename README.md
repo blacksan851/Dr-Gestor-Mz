@@ -18,3 +18,9 @@ View your app in AI Studio: https://ai.studio/apps/f1212cfc-b68f-47d0-ad61-c2141
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
 3. Run the app:
    `npm run dev`
+
+
+## 🚀 Integração com Supabase - Teste de GitHub Integration
+**Data do Teste:** 30 de Abril de 2026
+**Status:** ✅ Conectado e testando deploy automático via GitHub Integration do Supabase
+**Objetivo:** Validar se mudanças no repositório disparam deploy automático em produção
