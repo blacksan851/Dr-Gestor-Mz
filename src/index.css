@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+@layer base {
+  :root[data-theme="light"] {
+    --color-neutral-950: #f8fafc;
+    --color-neutral-900: #ffffff;
+    --color-neutral-800: #e2e8f0;
+    --color-neutral-700: #cbd5e1;
+    --color-neutral-600: #94a3b8;
+    --color-neutral-500: #64748b;
+    --color-neutral-400: #334155;
+    --color-neutral-300: #1e293b;
+    --color-neutral-200: #0f172a;
+    --color-white: #0f172a;
+  }
+  
+  :root[data-theme="light"] button.bg-emerald-600,
+  :root[data-theme="light"] button.bg-red-500,
+  :root[data-theme="light"] .text-emerald-400 {
+    color: var(--color-emerald-600, #059669); /* dark green for some text */
+  }
+
+  /* Keep actual white for button backgrounds */
+  :root[data-theme="light"] button.bg-emerald-600,
+  :root[data-theme="light"] button.bg-red-500,
+  :root[data-theme="light"] .bg-emerald-600 {
+    color: #ffffff !important;
+  }
+}
