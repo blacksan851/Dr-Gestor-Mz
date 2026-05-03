@@ -2,7 +2,7 @@ import { useStore } from '../lib/store';
 import { ShoppingCart, Package, TrendingUp, Download, Upload, FileText, FileJson } from 'lucide-react';
 import { formatCurrency } from '../lib/utils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import Papa from 'papaparse';
 
 const data = [

@@ -39,7 +39,7 @@ export type CartItem = Product & { quantity: number };
 
 interface AppState {
   user: { id: string; name: string; role: 'admin' | 'gerente' | 'vendedor'; companyName: string } | null;
-  login: (identifier: string, isCodeOnly?: boolean, companyName?: string) => void;
+  login: (identifier: string, password?: string, companyName?: string) => void;
   setAuth: (user: any) => void;
   logout: () => void;
   
