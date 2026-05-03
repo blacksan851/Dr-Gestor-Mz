@@ -40,6 +40,7 @@ export type CartItem = Product & { quantity: number };
 interface AppState {
   user: { id: string; name: string; role: 'admin' | 'gerente' | 'vendedor'; companyName: string } | null;
   login: (identifier: string, isCodeOnly?: boolean, companyName?: string) => void;
+  setAuth: (user: any) => void;
   logout: () => void;
   
   staff: StaffUser[];
@@ -83,6 +84,7 @@ interface AppState {
 
 export const useStore = create<AppState>((set) => ({
   user: null,
+  setAuth: (user) => set({ user }),
   login: (identifier, password, companyName) => set((state) => {
     // Check if it matches a staff member (Email + Access Code OR Just Access Code for fast login)
     const seller = state.staff.find(s => 

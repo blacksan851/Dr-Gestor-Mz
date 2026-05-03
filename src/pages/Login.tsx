@@ -2,13 +2,20 @@ import React, { useState } from 'react';
 import { useStore } from '../lib/store';
 import { cn } from '../lib/utils';
 import { Building2, User } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { auth, db } from '../lib/firebase';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 export default function Login() {
   const [isLogin, setIsLogin] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const navigate = useNavigate();
   
   // Login State
-  const [email, setEmail] = useState('demo@gestormz.co.mz');
-  const [password, setPassword] = useState('demo123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   
   // Register State
   const [companyName, setCompanyName] = useState('');
@@ -17,13 +24,70 @@ export default function Login() {
   const [regPassword, setRegPassword] = useState('');
 
   const login = useStore(state => state.login);
+  const setAuth = useStore(state => state.setAuth);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLogin) {
-      login(email, password);
-    } else {
-      login(userName || 'Novo Usuário', regPassword, companyName || 'Nova Empresa');
+    setIsLoading(true);
+    setErrorMsg('');
+
+    try {
+      if (isLogin) {
+        // Mock fallback if email is "demo@gestormz.co.mz"
+        if (email === 'demo@gestormz.co.mz') {
+           login(email, password);
+           navigate('/dashboard');
+           return;
+        }
+
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const userDocRef = doc(db, 'users', userCredential.user.uid);
+        const userSnap = await getDoc(userDocRef);
+
+        let companyNameStr = 'Minha Empresa';
+        let roleStr = 'admin';
+        let nameStr = email;
+
+        if (userSnap.exists()) {
+           const data = userSnap.data();
+           companyNameStr = data.companyName || companyNameStr;
+           roleStr = data.role || roleStr;
+           nameStr = data.name || nameStr;
+        }
+
+        setAuth({
+          id: userCredential.user.uid,
+          name: nameStr,
+          role: roleStr,
+          companyName: companyNameStr
+        });
+        navigate('/dashboard');
+
+      } else {
+        const userCredential = await createUserWithEmailAndPassword(auth, regEmail, regPassword);
+        
+        // Save user to Firestore
+        await setDoc(doc(db, 'users', userCredential.user.uid), {
+          name: userName,
+          email: regEmail,
+          role: 'admin',
+          companyName: companyName,
+          createdAt: serverTimestamp() // We'll disable timestamp rules for simplicity during testing, wait, we specified request.time in draft rules?
+        });
+
+        setAuth({
+          id: userCredential.user.uid,
+          name: userName,
+          role: 'admin',
+          companyName: companyName || 'Company'
+        });
+        navigate('/dashboard');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setErrorMsg(err.message || 'Erro de conexão com o Firebase.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -73,6 +137,12 @@ export default function Login() {
             Criar Conta
           </button>
         </div>
+
+        {errorMsg && (
+          <div className="bg-red-500/10 border border-red-500/50 text-red-500 text-sm p-3 rounded-lg text-center">
+            {errorMsg}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {!isLogin && (
@@ -138,9 +208,10 @@ export default function Login() {
           <div className="pt-2">
             <button 
               type="submit"
-              className="w-full bg-emerald-600 text-white font-bold py-2.5 rounded-lg hover:bg-emerald-500 transition-colors shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+              disabled={isLoading}
+              className="w-full bg-emerald-600 text-white font-bold py-2.5 rounded-lg hover:bg-emerald-500 transition-colors shadow-[0_0_15px_rgba(16,185,129,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLogin ? 'Entrar no Sistema' : 'Cadastrar e Acessar (14 dias Grátis)'}
+              {isLoading ? 'Processando...' : (isLogin ? 'Entrar no Sistema' : 'Cadastrar e Acessar (14 dias Grátis)')}
             </button>
           </div>
         </form>

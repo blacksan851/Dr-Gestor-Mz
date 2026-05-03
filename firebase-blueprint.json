@@ -1,0 +1,140 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user of the application",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "gerente", "vendedor"] },
+        "companyName": { "type": "string" },
+        "createdAt": { "type": "number", "description": "Timestamp" }
+      },
+      "required": ["name", "email", "role"]
+    },
+    "Staff": {
+      "title": "Staff",
+      "description": "Staff member for a specific company",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "gerente", "vendedor"] },
+        "status": { "type": "string", "enum": ["ativo", "inativo"] },
+        "accessCode": { "type": "string" },
+        "companyId": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["name", "role", "status", "companyId"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "A product for sale",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "price": { "type": "number" },
+        "costPrice": { "type": "number" },
+        "stock": { "type": "number" },
+        "category": { "type": "string" },
+        "barcode": { "type": "string" },
+        "image": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "companyId": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["name", "price", "stock", "companyId"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Product category",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "companyId": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["name", "companyId"]
+    },
+    "Customer": {
+      "title": "Customer",
+      "description": "Customer profile",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "nuit": { "type": "string" },
+        "status": { "type": "string", "enum": ["ativo", "inativo"] },
+        "balance": { "type": "number" },
+        "companyId": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["name", "companyId"]
+    },
+    "Sale": {
+      "title": "Sale",
+      "description": "A completed sale",
+      "type": "object",
+      "properties": {
+        "total": { "type": "number" },
+        "totalCost": { "type": "number" },
+        "paymentMethod": { "type": "string" },
+        "items": { "type": "array" },
+        "sellerId": { "type": "string" },
+        "sellerName": { "type": "string" },
+        "companyId": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["total", "paymentMethod", "items", "companyId", "createdAt"]
+    },
+    "Settings": {
+      "title": "Settings",
+      "description": "Company settings",
+      "type": "object",
+      "properties": {
+        "companyName": { "type": "string" },
+        "nuit": { "type": "string" },
+        "address": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "logoUrl": { "type": "string" },
+        "receiptMessage": { "type": "string" },
+        "companyId": { "type": "string" }
+      },
+      "required": ["companyId"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "App users"
+    },
+    "companies/{companyId}/staff/{staffId}": {
+      "schema": { "$ref": "#/entities/Staff" },
+      "description": "Staff in a company"
+    },
+    "companies/{companyId}/products/{productId}": {
+      "schema": { "$ref": "#/entities/Product" },
+      "description": "Products for a company"
+    },
+    "companies/{companyId}/categories/{categoryId}": {
+      "schema": { "$ref": "#/entities/Category" },
+      "description": "Categories for a company"
+    },
+    "companies/{companyId}/customers/{customerId}": {
+      "schema": { "$ref": "#/entities/Customer" },
+      "description": "Customers for a company"
+    },
+    "companies/{companyId}/sales/{saleId}": {
+      "schema": { "$ref": "#/entities/Sale" },
+      "description": "Sales for a company"
+    },
+    "companies/{companyId}/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/Settings" },
+      "description": "Settings for a company"
+    }
+  }
+}
