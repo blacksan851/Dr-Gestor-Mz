@@ -13,3 +13,13 @@ export function formatCurrency(amount: number) {
     minimumFractionDigits: 2,
   }).format(amount);
 }
+
+export function formatDate(dateString: string) {
+  return new Intl.DateTimeFormat("pt-MZ", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(new Date(dateString));
+}

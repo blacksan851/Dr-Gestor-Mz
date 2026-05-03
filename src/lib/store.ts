@@ -37,6 +37,15 @@ export type Customer = {
   balance: number; // Balance for 'Fiados'
 };
 
+export type Expense = {
+  id: string;
+  description: string;
+  amount: number;
+  category: string;
+  date: string;
+  registeredBy: string;
+};
+
 export type CartItem = Product & { quantity: number };
 
 interface AppState {
@@ -80,6 +89,9 @@ interface AppState {
   clearCart: () => void;
   checkout: (paymentMethod: string, customerId?: string) => void;
   sales: any[];
+  expenses: Expense[];
+  addExpense: (expense: Omit<Expense, 'id'>) => void;
+  deleteExpense: (id: string) => void;
   theme: 'dark' | 'light';
   toggleTheme: () => void;
 }
@@ -237,6 +249,15 @@ export const useStore = create<AppState>()(
       customers: updatedCustomers
     };
   }),
+
+  expenses: [],
+  addExpense: (expense) => set((state) => ({
+    expenses: [{ ...expense, id: Math.random().toString(36).substr(2, 9) }, ...state.expenses]
+  })),
+  deleteExpense: (id) => set((state) => ({
+    expenses: state.expenses.filter(e => e.id !== id)
+  })),
+
   theme: 'dark',
   toggleTheme: () => set((state) => {
     const newTheme = state.theme === 'dark' ? 'light' : 'dark';
@@ -250,6 +271,7 @@ export const useStore = create<AppState>()(
         products: state.products,
         categories: state.categories,
         sales: state.sales,
+        expenses: state.expenses,
         staff: state.staff,
         customers: state.customers,
         theme: state.theme,

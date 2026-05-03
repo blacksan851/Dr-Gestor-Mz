@@ -6,6 +6,7 @@ export default function Staff() {
   const { staff, addStaff, updateStaff, deleteStaff, user: currentUser } = useStore();
   const [isAdding, setIsAdding] = useState(false);
   const [editingStaffId, setEditingStaffId] = useState<string | null>(null);
+  const [newStaffDetails, setNewStaffDetails] = useState<{ email: string, accessCode: string, link: string } | null>(null);
 
   const [formData, setFormData] = useState<Omit<StaffUser, 'id'>>({
     name: '',
@@ -23,6 +24,11 @@ export default function Staff() {
     } else {
       addStaff(formData);
       setIsAdding(false);
+      setNewStaffDetails({
+        email: formData.email,
+        accessCode: formData.accessCode,
+        link: `${window.location.origin}/login`
+      });
     }
   };
 
@@ -221,6 +227,55 @@ export default function Staff() {
           )}
         </div>
       </div>
+
+      {newStaffDetails && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-xl shadow-2xl w-full max-w-md p-6 relative">
+            <button 
+              onClick={() => setNewStaffDetails(null)} 
+              className="absolute top-4 right-4 text-neutral-400 hover:text-white"
+            >
+              <X size={20} />
+            </button>
+            <div className="text-center mb-6">
+              <div className="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-3">
+                <BadgeCheck size={28} />
+              </div>
+              <h3 className="text-xl font-bold text-white">Colaborador Criado!</h3>
+              <p className="text-sm text-neutral-400 mt-1">
+                Partilhe estas credenciais com o colaborador para aceder ao sistema.
+              </p>
+            </div>
+            
+            <div className="space-y-4 bg-neutral-950 p-4 rounded-lg border border-neutral-800">
+              <div>
+                <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-1">Página de Login</label>
+                <div className="text-emerald-400 font-mono text-sm break-all bg-emerald-500/10 p-2 rounded">{newStaffDetails.link}</div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-1">Email</label>
+                <div className="text-white font-medium">{newStaffDetails.email || 'Não definido'}</div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-1">Código PIN (Senha)</label>
+                <div className="text-white font-medium">{newStaffDetails.accessCode}</div>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <button 
+                onClick={() => {
+                  navigator.clipboard.writeText(`Acesso ao Gestor MZ:\nLink: ${newStaffDetails.link}\nEmail: ${newStaffDetails.email}\nPIN: ${newStaffDetails.accessCode}`)
+                  alert('Credenciais copiadas!');
+                }}
+                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2 rounded-lg transition shadow-[0_0_15px_rgba(16,185,129,0.2)]"
+              >
+                Copiar para a Área de Transferência
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

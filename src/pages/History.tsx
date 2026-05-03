@@ -10,7 +10,7 @@ import autoTable from 'jspdf-autotable';
 const COLORS = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6'];
 
 export default function History() {
-  const { sales, settings } = useStore();
+  const { sales, settings, expenses } = useStore();
   const [selectedSale, setSelectedSale] = useState<any>(null);
 
   // Prepare data for the Payment Method Pie Chart
@@ -36,6 +36,22 @@ export default function History() {
     });
     return acc;
   }, []);
+
+  const totalSalesValue = sales.reduce((acc, sale) => acc + sale.total, 0);
+  const totalCostValue = sales.reduce((acc, sale) => acc + (sale.totalCost || 0), 0);
+  const grossProfit = totalSalesValue - totalCostValue;
+  const totalExpenses = expenses ? expenses.reduce((acc, e) => acc + e.amount, 0) : 0;
+  const netProfit = grossProfit - totalExpenses;
+
+  // Prepare data for the Profit vs Cost Pie Chart
+  const profitData = [
+    { name: 'Custo de Produto', value: totalCostValue, color: '#EF4444' }, // Red
+    { name: 'Despesas', value: totalExpenses, color: '#F59E0B' }, // Amber/Orange
+    { name: 'Lucro Líquido', value: Math.max(0, netProfit), color: '#10B981' } // Emerald
+  ];
+
+  // Filter out zeroes
+  const validProfitData = profitData.filter(d => d.value > 0);
 
   const handleExportPDF = () => {
     const doc = new jsPDF();
@@ -114,7 +130,39 @@ export default function History() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 shrink-0">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 shrink-0">
+        <div className="bg-neutral-900 rounded-xl shadow-sm border border-neutral-800 p-5">
+          <h2 className="text-lg font-bold text-white mb-4">Margem de Lucro Global</h2>
+          <div className="h-48 w-full">
+            {validProfitData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={validProfitData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={70}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {validProfitData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip 
+                    formatter={(value) => formatCurrency(value as number)}
+                    contentStyle={{ backgroundColor: '#0A0A0A', borderColor: '#262626', borderRadius: '8px', color: '#E5E5E5' }}
+                  />
+                  <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-sm text-neutral-400 text-center py-10">Sem vendas registradas</p>
+            )}
+          </div>
+        </div>
+
         <div className="bg-neutral-900 rounded-xl shadow-sm border border-neutral-800 p-5">
           <h2 className="text-lg font-bold text-white mb-4">Vendas por Método de Pagamento</h2>
           <div className="h-48 w-full">

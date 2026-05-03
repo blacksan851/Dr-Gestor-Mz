@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ShoppingCart, Package, Users, LogOut, Menu, Wallet, Settings, Shield, Moon, Sun, Download, Bell, X, AlertTriangle } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Package, Users, LogOut, Menu, Wallet, Settings, Shield, Moon, Sun, Download, Bell, X, AlertTriangle, TrendingDown } from 'lucide-react';
 import { useStore } from '../lib/store';
 import { useState, useEffect } from 'react';
 import { cn } from '../lib/utils';
@@ -26,6 +26,7 @@ export default function AppLayout() {
     { name: 'Produtos', path: '/products', icon: Package },
     { name: 'Clientes & Fiados', path: '/customers', icon: Users },
     { name: 'Histórico & Recibos', path: '/history', icon: Wallet },
+    { name: 'Despesas', path: '/expenses', icon: TrendingDown },
     { name: 'Equipa & Acessos', path: '/staff', icon: Shield, adminOnly: true },
     { name: 'Configurações', path: '/settings', icon: Settings, adminOnly: true },
   ];

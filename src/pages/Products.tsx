@@ -35,6 +35,17 @@ export default function Products() {
   const [editBarcode, setEditBarcode] = useState('');
   const [editImageUrl, setEditImageUrl] = useState('');
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, setUrl: (url: string) => void) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const filteredProducts = products.filter(p => 
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     p.category.toLowerCase().includes(searchTerm.toLowerCase())
@@ -235,12 +246,13 @@ export default function Products() {
               <input type="number" required min="0" step="0.01" value={price} onChange={e => setPrice(e.target.value)} className="w-full px-4 py-2 bg-neutral-950 border border-neutral-800 text-white rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none placeholder-neutral-600" placeholder="Ex: 50.00" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-neutral-400 mb-1">Custo (MZN) Opcional</label>
-              <input type="number" min="0" step="0.01" value={costPrice} onChange={e => setCostPrice(e.target.value)} className="w-full px-4 py-2 bg-neutral-950 border border-neutral-800 text-white rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none placeholder-neutral-600" placeholder="Ex: 30.00" />
+              <label className="block text-sm font-medium text-neutral-400 mb-1">Custo (MZN) Obrigatório para Lucros</label>
+              <input type="number" min="0" step="0.01" required value={costPrice} onChange={e => setCostPrice(e.target.value)} className="w-full px-4 py-2 bg-neutral-950 border border-neutral-800 text-white rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none placeholder-neutral-600" placeholder="Ex: 30.00" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-neutral-400 mb-1">URL da Imagem (Opcional)</label>
-              <input type="url" value={imageUrl} onChange={e => setImageUrl(e.target.value)} className="w-full px-4 py-2 bg-neutral-950 border border-neutral-800 text-white rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none placeholder-neutral-600" placeholder="https://..." />
+              <label className="block text-sm font-medium text-neutral-400 mb-1">Imagem do Produto (Upload)</label>
+              <input type="file" accept="image/*" onChange={e => handleImageChange(e, setImageUrl)} className="w-full px-4 py-2 bg-neutral-950 border border-neutral-800 text-white rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-emerald-500/10 file:text-emerald-500 hover:file:bg-emerald-500/20" />
+              {imageUrl && <div className="mt-2"><img src={imageUrl} alt="Preview" className="h-10 w-10 object-cover rounded border border-neutral-800" /></div>}
             </div>
             <div>
               <label className="block text-sm font-medium text-neutral-400 mb-1">Estoque Inicial</label>
@@ -315,7 +327,10 @@ export default function Products() {
                       <>
                         <td className="px-6 py-4 flex flex-col gap-2">
                           <input type="text" value={editName} onChange={e => setEditName(e.target.value)} className="w-full px-2 py-1 bg-neutral-950 border border-neutral-800 text-white rounded focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="Nome" />
-                          <input type="text" value={editImageUrl} onChange={e => setEditImageUrl(e.target.value)} className="w-full px-2 py-1 bg-neutral-950 border border-neutral-800 text-white rounded focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="Reg. Imagem URL" />
+                          <label className="text-xs text-neutral-500 cursor-pointer hover:text-emerald-400 flex items-center gap-1">
+                            <Package className="w-3 h-3" /> Mudar Imagem
+                            <input type="file" accept="image/*" onChange={e => handleImageChange(e, setEditImageUrl)} className="hidden" />
+                          </label>
                         </td>
                         <td className="px-6 py-4">
                           <input type="text" value={editBarcode} onChange={e => setEditBarcode(e.target.value)} placeholder="-" className="w-full px-2 py-1 bg-neutral-950 border border-neutral-800 text-white rounded focus:ring-2 focus:ring-emerald-500 outline-none" />
@@ -327,8 +342,8 @@ export default function Products() {
                           </select>
                         </td>
                         <td className="px-6 py-4 flex flex-col gap-2">
-                          <input type="number" min="0" step="0.01" value={editPrice} onChange={e => setEditPrice(e.target.value)} className="w-24 px-2 py-1 bg-neutral-950 border border-neutral-800 text-white rounded focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="Preço" />
-                          <input type="number" min="0" step="0.01" value={editCostPrice} onChange={e => setEditCostPrice(e.target.value)} className="w-24 px-2 py-1 bg-neutral-950 border border-neutral-800 text-white rounded focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="Custo" />
+                          <input type="number" min="0" step="0.01" value={editPrice} onChange={e => setEditPrice(e.target.value)} className="w-24 px-2 py-1 bg-neutral-950 border border-neutral-800 text-white rounded focus:ring-2 focus:ring-emerald-500 outline-none" title="Preço de Venda" placeholder="Venda" />
+                          <input type="number" min="0" step="0.01" required value={editCostPrice} onChange={e => setEditCostPrice(e.target.value)} className="w-24 px-2 py-1 bg-neutral-950 border border-neutral-800 text-white rounded focus:ring-2 focus:ring-emerald-500 outline-none" title="Preço de Custo" placeholder="Custo" />
                         </td>
                         <td className="px-6 py-4 flex flex-col gap-2">
                           <input type="number" min="0" value={editStock} onChange={e => setEditStock(e.target.value)} className="w-20 px-2 py-1 bg-neutral-950 border border-neutral-800 text-white rounded focus:ring-2 focus:ring-emerald-500 outline-none" title="Estoque Atual" placeholder="Qtd" />

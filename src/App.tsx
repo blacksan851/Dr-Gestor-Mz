@@ -12,6 +12,7 @@ import Dashboard from './pages/Dashboard';
 import Sales from './pages/Sales';
 import Products from './pages/Products';
 import History from './pages/History';
+import Expenses from './pages/Expenses';
 import Customers from './pages/Customers';
 import Settings from './pages/Settings';
 import Staff from './pages/Staff';
@@ -36,6 +37,7 @@ export default function App() {
             <Route path="/products" element={<Products />} />
             <Route path="/customers" element={<Customers />} />
             <Route path="/history" element={<History />} />
+            <Route path="/expenses" element={<Expenses />} />
             {user.role === 'admin' && (
               <>
                 <Route path="/staff" element={<Staff />} />

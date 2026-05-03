@@ -8,14 +8,18 @@ import Papa from 'papaparse';
 const COLORS = ['#10B981', '#34D399', '#059669', '#047857'];
 
 export default function Dashboard() {
-  const { user, products, sales, settings, categories } = useStore();
+  const { user, products, sales, expenses, settings, categories } = useStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [showImportMenu, setShowImportMenu] = useState(false);
 
   const totalSales = sales.reduce((acc, sale) => acc + sale.total, 0);
   const totalCost = sales.reduce((acc, sale) => acc + (sale.totalCost || 0), 0);
-  const profit = totalSales - totalCost;
+  const grossProfit = totalSales - totalCost;
+  
+  const totalExpenses = expenses ? expenses.reduce((acc, exp) => acc + exp.amount, 0) : 0;
+  const netProfit = grossProfit - totalExpenses;
+
   const lowStock = products.filter(p => p.stock < 10).length;
 
   const paymentData = sales.reduce((acc: any[], sale) => {
@@ -244,44 +248,39 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-neutral-900 rounded-xl p-5 shadow-sm border border-neutral-800 flex items-center justify-between">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="bg-neutral-900 rounded-xl p-4 shadow-sm border border-neutral-800 flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-neutral-400 mb-1">Vendas Totais</p>
-            <p className="text-2xl font-bold text-white">{formatCurrency(totalSales)}</p>
-          </div>
-          <div className="h-10 w-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
-            <TrendingUp className="h-5 w-5 text-emerald-400" />
+            <p className="text-xs font-medium text-neutral-400 mb-1">Vendas Totais</p>
+            <p className="text-xl font-bold text-white">{formatCurrency(totalSales)}</p>
           </div>
         </div>
 
-        <div className="bg-neutral-900 rounded-xl p-5 shadow-sm border border-neutral-800 flex items-center justify-between">
+        <div className="bg-neutral-900 rounded-xl p-4 shadow-sm border border-neutral-800 flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-neutral-400 mb-1">Lucro Líquido</p>
-            <p className="text-2xl font-bold text-emerald-400">{formatCurrency(profit)}</p>
-          </div>
-          <div className="h-10 w-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
-            <TrendingUp className="h-5 w-5 text-emerald-400" />
+            <p className="text-xs font-medium text-neutral-400 mb-1">Lucro Bruto</p>
+            <p className="text-xl font-bold text-emerald-400">{formatCurrency(grossProfit)}</p>
           </div>
         </div>
 
-        <div className="bg-neutral-900 rounded-xl p-5 shadow-sm border border-neutral-800 flex items-center justify-between">
+        <div className="bg-neutral-900 rounded-xl p-4 shadow-sm border border-neutral-800 flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-neutral-400 mb-1">Pedidos no dia</p>
-            <p className="text-2xl font-bold text-white">{sales.length}</p>
-          </div>
-          <div className="h-10 w-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
-            <ShoppingCart className="h-5 w-5 text-emerald-400" />
+            <p className="text-xs font-medium text-neutral-400 mb-1">Despesas</p>
+            <p className="text-xl font-bold text-red-400">{formatCurrency(totalExpenses)}</p>
           </div>
         </div>
 
-        <div className="bg-neutral-900 rounded-xl p-5 shadow-sm border border-neutral-800 flex items-center justify-between">
+        <div className="bg-neutral-900 rounded-xl p-4 shadow-sm border border-neutral-800 flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-neutral-400 mb-1">Estoque Baixo</p>
-            <p className="text-2xl font-bold text-red-500">{lowStock}</p>
+            <p className="text-xs font-medium text-neutral-400 mb-1">Balanço Final</p>
+            <p className="text-xl font-bold text-blue-400">{formatCurrency(netProfit)}</p>
           </div>
-          <div className="h-10 w-10 rounded-full bg-red-500/10 flex items-center justify-center">
-            <Package className="h-5 w-5 text-red-500" />
+        </div>
+
+        <div className="bg-neutral-900 rounded-xl p-4 shadow-sm border border-neutral-800 flex items-center justify-between">
+          <div>
+            <p className="text-xs font-medium text-neutral-400 mb-1">Estoque Baixo</p>
+            <p className="text-xl font-bold text-red-500">{lowStock}</p>
           </div>
         </div>
       </div>
