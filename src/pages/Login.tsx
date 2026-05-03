@@ -4,13 +4,15 @@ import { cn } from '../lib/utils';
 import { Building2, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../lib/firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 export default function Login() {
   const [isLogin, setIsLogin] = useState(true);
+  const [isResetPassword, setIsResetPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const navigate = useNavigate();
   
   // Login State
@@ -26,10 +28,29 @@ export default function Login() {
   const login = useStore(state => state.login);
   const setAuth = useStore(state => state.setAuth);
 
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setSuccessMsg('Um email com instruções de recuperação foi enviado para ' + email);
+      setIsResetPassword(false);
+    } catch (err: any) {
+      console.error(err);
+      setErrorMsg(err.message || 'Erro ao enviar email de recuperação.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setErrorMsg('');
+    setSuccessMsg('');
 
     try {
       if (isLogin) {
@@ -66,6 +87,9 @@ export default function Login() {
       } else {
         const userCredential = await createUserWithEmailAndPassword(auth, regEmail, regPassword);
         
+        // Send email verification
+        await sendEmailVerification(userCredential.user);
+
         // Save user to Firestore
         await setDoc(doc(db, 'users', userCredential.user.uid), {
           name: userName,
@@ -81,6 +105,8 @@ export default function Login() {
           role: 'admin',
           companyName: companyName || 'Company'
         });
+        
+        setSuccessMsg('Conta criada com sucesso! Enviamos um link de confirmação para o seu email.');
         navigate('/dashboard');
       }
     } catch (err: any) {
@@ -113,30 +139,32 @@ export default function Login() {
           </div>
           <h2 className="text-2xl font-bold text-white">Gestor MZ</h2>
           <p className="text-neutral-400 mt-2 text-sm">
-            {isLogin ? 'Faça login para acessar o sistema de gestão' : 'Cadastre sua empresa hoje'}
+            {isResetPassword ? 'Recupere sua senha' : (isLogin ? 'Faça login para acessar o sistema de gestão' : 'Cadastre sua empresa hoje')}
           </p>
         </div>
 
-        <div className="flex bg-neutral-950 p-1 rounded-lg border border-neutral-800">
-          <button
-            onClick={() => setIsLogin(true)}
-            className={cn(
-              "flex-1 py-2 text-sm font-medium rounded-md transition-all",
-              isLogin ? "bg-neutral-800 text-white shadow-sm" : "text-neutral-500 hover:text-white"
-            )}
-          >
-            Entrar
-          </button>
-          <button
-            onClick={() => setIsLogin(false)}
-            className={cn(
-              "flex-1 py-2 text-sm font-medium rounded-md transition-all",
-              !isLogin ? "bg-neutral-800 text-white shadow-sm" : "text-neutral-500 hover:text-white"
-            )}
-          >
-            Criar Conta
-          </button>
-        </div>
+        {!isResetPassword && (
+          <div className="flex bg-neutral-950 p-1 rounded-lg border border-neutral-800">
+            <button
+              onClick={() => setIsLogin(true)}
+              className={cn(
+                "flex-1 py-2 text-sm font-medium rounded-md transition-all",
+                isLogin ? "bg-neutral-800 text-white shadow-sm" : "text-neutral-500 hover:text-white"
+              )}
+            >
+              Entrar
+            </button>
+            <button
+              onClick={() => setIsLogin(false)}
+              className={cn(
+                "flex-1 py-2 text-sm font-medium rounded-md transition-all",
+                !isLogin ? "bg-neutral-800 text-white shadow-sm" : "text-neutral-500 hover:text-white"
+              )}
+            >
+              Criar Conta
+            </button>
+          </div>
+        )}
 
         {errorMsg && (
           <div className="bg-red-500/10 border border-red-500/50 text-red-500 text-sm p-3 rounded-lg text-center">
@@ -144,81 +172,130 @@ export default function Login() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {!isLogin && (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-neutral-300 mb-1">Nome da Empresa</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Building2 className="h-4 w-4 text-neutral-500" />
-                  </div>
-                  <input 
-                    type="text" 
-                    required
-                    value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 bg-neutral-950 border border-neutral-800 text-white rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all placeholder-neutral-600"
-                    placeholder="Sua Empresa, Lda"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-neutral-300 mb-1">Seu Nome Completo</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="h-4 w-4 text-neutral-500" />
-                  </div>
-                  <input 
-                    type="text" 
-                    required
-                    value={userName}
-                    onChange={(e) => setUserName(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 bg-neutral-950 border border-neutral-800 text-white rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all placeholder-neutral-600"
-                    placeholder="João Silva"
-                  />
-                </div>
-              </div>
-            </>
-          )}
+        {successMsg && (
+          <div className="bg-emerald-500/10 border border-emerald-500/50 text-emerald-400 text-sm p-3 rounded-lg text-center">
+            {successMsg}
+          </div>
+        )}
 
-          <div>
-            <label className="block text-sm font-medium text-neutral-300 mb-1">Email</label>
-            <input 
-              type="email" 
-              required
-              value={isLogin ? email : regEmail}
-              onChange={(e) => isLogin ? setEmail(e.target.value) : setRegEmail(e.target.value)}
-              className="w-full px-4 py-2 bg-neutral-950 border border-neutral-800 text-white rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all placeholder-neutral-600"
-              placeholder="seu@email.com"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-neutral-300 mb-1">Senha {isLogin && '/ Código PIN'}</label>
-            <input 
-              type="password" 
-              required
-              value={isLogin ? password : regPassword}
-              onChange={(e) => isLogin ? setPassword(e.target.value) : setRegPassword(e.target.value)}
-              className="w-full px-4 py-2 bg-neutral-950 border border-neutral-800 text-white rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all placeholder-neutral-600"
-              placeholder={isLogin ? "•••••••• ou PIN" : "••••••••"}
-            />
-          </div>
-          
-          <div className="pt-2">
-            <button 
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-emerald-600 text-white font-bold py-2.5 rounded-lg hover:bg-emerald-500 transition-colors shadow-[0_0_15px_rgba(16,185,129,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? 'Processando...' : (isLogin ? 'Entrar no Sistema' : 'Cadastrar e Acessar (14 dias Grátis)')}
-            </button>
-          </div>
-        </form>
+        {isResetPassword ? (
+          <form onSubmit={handleResetPassword} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-neutral-300 mb-1">Email</label>
+              <input 
+                type="email" 
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-2 bg-neutral-950 border border-neutral-800 text-white rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all placeholder-neutral-600"
+                placeholder="seu@email.com"
+              />
+            </div>
+            <div className="pt-2 flex flex-col gap-2">
+              <button 
+                type="submit"
+                disabled={isLoading}
+                className="w-full bg-emerald-600 text-white font-bold py-2.5 rounded-lg hover:bg-emerald-500 transition-colors shadow-[0_0_15px_rgba(16,185,129,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? 'Processando...' : 'Recuperar Senha'}
+              </button>
+              <button 
+                type="button"
+                onClick={() => setIsResetPassword(false)}
+                className="w-full bg-neutral-800 text-white py-2.5 rounded-lg hover:bg-neutral-700 transition-colors"
+              >
+                Voltar ao Login
+              </button>
+            </div>
+          </form>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {!isLogin && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-300 mb-1">Nome da Empresa</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Building2 className="h-4 w-4 text-neutral-500" />
+                    </div>
+                    <input 
+                      type="text" 
+                      required
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 bg-neutral-950 border border-neutral-800 text-white rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all placeholder-neutral-600"
+                      placeholder="Sua Empresa, Lda"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-300 mb-1">Seu Nome Completo</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <User className="h-4 w-4 text-neutral-500" />
+                    </div>
+                    <input 
+                      type="text" 
+                      required
+                      value={userName}
+                      onChange={(e) => setUserName(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 bg-neutral-950 border border-neutral-800 text-white rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all placeholder-neutral-600"
+                      placeholder="João Silva"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            <div>
+              <label className="block text-sm font-medium text-neutral-300 mb-1">Email</label>
+              <input 
+                type="email" 
+                required
+                value={isLogin ? email : regEmail}
+                onChange={(e) => isLogin ? setEmail(e.target.value) : setRegEmail(e.target.value)}
+                className="w-full px-4 py-2 bg-neutral-950 border border-neutral-800 text-white rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all placeholder-neutral-600"
+                placeholder="seu@email.com"
+              />
+            </div>
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <label className="block text-sm font-medium text-neutral-300 mb-1">Senha {isLogin && '/ Código PIN'}</label>
+                {isLogin && (
+                  <button 
+                    type="button"
+                    onClick={() => setIsResetPassword(true)}
+                    className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors"
+                  >
+                    Esqueceu a senha?
+                  </button>
+                )}
+              </div>
+              <input 
+                type="password" 
+                required
+                value={isLogin ? password : regPassword}
+                onChange={(e) => isLogin ? setPassword(e.target.value) : setRegPassword(e.target.value)}
+                className="w-full px-4 py-2 bg-neutral-950 border border-neutral-800 text-white rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all placeholder-neutral-600"
+                placeholder={isLogin ? "•••••••• ou PIN" : "••••••••"}
+              />
+            </div>
+            
+            <div className="pt-2">
+              <button 
+                type="submit"
+                disabled={isLoading}
+                className="w-full bg-emerald-600 text-white font-bold py-2.5 rounded-lg hover:bg-emerald-500 transition-colors shadow-[0_0_15px_rgba(16,185,129,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? 'Processando...' : (isLogin ? 'Entrar no Sistema' : 'Cadastrar e Acessar (14 dias Grátis)')}
+              </button>
+            </div>
+          </form>
+        )}
 
         <div className="text-center pt-2">
           <p className="text-xs text-neutral-500">
-            Apenas para demonstração. {isLogin ? 'Os dados de teste (demo@gestormz.co.mz) já estão preenchidos.' : 'Cadastro simplificado.'}
+            {isResetPassword ? 'Enviaremos as instruções pelo email.' : 'Apenas para demonstração.'}
           </p>
         </div>
       </div>
