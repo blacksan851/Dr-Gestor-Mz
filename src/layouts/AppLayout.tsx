@@ -26,9 +26,11 @@ export default function AppLayout() {
     { name: 'Produtos', path: '/products', icon: Package },
     { name: 'Clientes & Fiados', path: '/customers', icon: Users },
     { name: 'Histórico & Recibos', path: '/history', icon: Wallet },
-    { name: 'Equipa & Acessos', path: '/staff', icon: Shield },
-    { name: 'Configurações', path: '/settings', icon: Settings },
+    { name: 'Equipa & Acessos', path: '/staff', icon: Shield, adminOnly: true },
+    { name: 'Configurações', path: '/settings', icon: Settings, adminOnly: true },
   ];
+
+  const visibleNavItems = navItems.filter(item => !item.adminOnly || user?.role === 'admin');
 
   return (
     <div className="flex h-screen bg-neutral-950 text-white overflow-hidden">
@@ -54,7 +56,7 @@ export default function AppLayout() {
         
         <div className="flex-1 overflow-y-auto py-4">
           <nav className="space-y-1 px-3">
-            {navItems.map((item) => (
+            {visibleNavItems.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
@@ -163,7 +165,7 @@ export default function AppLayout() {
                 <button onClick={() => setMobileMenuOpen(false)} className="text-neutral-400">Voltar</button>
               </div>
               <nav className="flex-1 p-4 space-y-2">
-                {navItems.map((item) => (
+                {visibleNavItems.map((item) => (
                   <Link
                     key={item.path}
                     to={item.path}

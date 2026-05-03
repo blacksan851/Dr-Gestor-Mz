@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '../lib/store';
 import { Building2, Save } from 'lucide-react';
 
 export default function Settings() {
-  const { settings, updateSettings } = useStore();
+  const { settings, updateSettings, user } = useStore();
   const [formData, setFormData] = useState(settings);
+
+  useEffect(() => {
+    setFormData(settings);
+  }, [settings]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

@@ -5,16 +5,6 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import React, { useRef, useState } from 'react';
 import Papa from 'papaparse';
 
-const data = [
-  { name: 'Seg', vendas: 4000 },
-  { name: 'Ter', vendas: 3000 },
-  { name: 'Qua', vendas: 2000 },
-  { name: 'Qui', vendas: 2780 },
-  { name: 'Sex', vendas: 1890 },
-  { name: 'Sáb', vendas: 2390 },
-  { name: 'Dom', vendas: 3490 },
-];
-
 const COLORS = ['#10B981', '#34D399', '#059669', '#047857'];
 
 export default function Dashboard() {
@@ -37,6 +27,31 @@ export default function Dashboard() {
     }
     return acc;
   }, []);
+
+  const getWeekData = () => {
+    const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    const weekData = Array.from({ length: 7 }).map((_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      return { 
+        name: days[d.getDay()], 
+        dateString: d.toISOString().split('T')[0],
+        vendas: 0 
+      };
+    });
+
+    sales.forEach(sale => {
+      const saleDate = new Date(sale.date).toISOString().split('T')[0];
+      const weekDay = weekData.find(w => w.dateString === saleDate);
+      if (weekDay) {
+        weekDay.vendas += sale.total;
+      }
+    });
+
+    return weekData;
+  };
+
+  const chartData = getWeekData();
 
   const handleExportDataJSON = () => {
     setShowExportMenu(false);
@@ -276,7 +291,7 @@ export default function Dashboard() {
           <h2 className="text-lg font-bold text-white mb-4">Evolução de Vendas</h2>
           <div className="h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#262626" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#A3A3A3', fontSize: 12 }} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fill: '#A3A3A3', fontSize: 12 }} />
