@@ -15,6 +15,7 @@ export default function Products() {
   const [price, setPrice] = useState('');
   const [costPrice, setCostPrice] = useState('');
   const [stock, setStock] = useState('');
+  const [minStock, setMinStock] = useState('');
   const [category, setCategory] = useState('');
   const [barcode, setBarcode] = useState('');
   const [imageUrl, setImageUrl] = useState('');
@@ -29,6 +30,7 @@ export default function Products() {
   const [editPrice, setEditPrice] = useState('');
   const [editCostPrice, setEditCostPrice] = useState('');
   const [editStock, setEditStock] = useState('');
+  const [editMinStock, setEditMinStock] = useState('');
   const [editCategory, setEditCategory] = useState('');
   const [editBarcode, setEditBarcode] = useState('');
   const [editImageUrl, setEditImageUrl] = useState('');
@@ -47,6 +49,7 @@ export default function Products() {
       price: Number(price),
       costPrice: costPrice.trim() ? Number(costPrice) : undefined,
       stock: Number(stock),
+      minStock: minStock.trim() ? Number(minStock) : undefined,
       category,
       barcode: barcode.trim() ? barcode : undefined,
       imageUrl: imageUrl.trim() ? imageUrl : undefined
@@ -56,6 +59,7 @@ export default function Products() {
     setPrice('');
     setCostPrice('');
     setStock('');
+    setMinStock('');
     setCategory('');
     setBarcode('');
     setImageUrl('');
@@ -68,6 +72,7 @@ export default function Products() {
     setEditPrice(product.price.toString());
     setEditCostPrice(product.costPrice?.toString() || '');
     setEditStock(product.stock.toString());
+    setEditMinStock(product.minStock?.toString() || '');
     setEditCategory(product.category);
     setEditBarcode(product.barcode || '');
     setEditImageUrl(product.imageUrl || '');
@@ -81,6 +86,7 @@ export default function Products() {
       price: Number(editPrice),
       costPrice: editCostPrice.trim() ? Number(editCostPrice) : undefined,
       stock: Number(editStock),
+      minStock: editMinStock.trim() ? Number(editMinStock) : undefined,
       category: editCategory,
       barcode: editBarcode.trim() ? editBarcode : undefined,
       imageUrl: editImageUrl.trim() ? editImageUrl : undefined
@@ -241,6 +247,10 @@ export default function Products() {
               <input type="number" required min="0" value={stock} onChange={e => setStock(e.target.value)} className="w-full px-4 py-2 bg-neutral-950 border border-neutral-800 text-white rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none placeholder-neutral-600" placeholder="Ex: 100" />
             </div>
             <div>
+              <label className="block text-sm font-medium text-neutral-400 mb-1">Estoque Mínimo</label>
+              <input type="number" min="0" value={minStock} onChange={e => setMinStock(e.target.value)} className="w-full px-4 py-2 bg-neutral-950 border border-neutral-800 text-white rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none placeholder-neutral-600" placeholder="Ex: 10" />
+            </div>
+            <div>
               <label className="block text-sm font-medium text-neutral-400 mb-1">Categoria</label>
               <select 
                 required 
@@ -297,8 +307,10 @@ export default function Products() {
                   </td>
                 </tr>
               ) : (
-                filteredProducts.map(product => (
-                  <tr key={product.id} className={`transition-colors ${product.stock < 10 ? 'bg-red-950/20 hover:bg-red-900/30' : 'hover:bg-neutral-800/50'}`}>
+                filteredProducts.map(product => {
+                  const isLowStock = product.minStock !== undefined ? product.stock <= product.minStock : product.stock < 10;
+                  return (
+                  <tr key={product.id} className={`transition-colors ${isLowStock ? 'bg-red-950/20 hover:bg-red-900/30' : 'hover:bg-neutral-800/50'}`}>
                     {editingProductId === product.id ? (
                       <>
                         <td className="px-6 py-4 flex flex-col gap-2">
@@ -318,8 +330,9 @@ export default function Products() {
                           <input type="number" min="0" step="0.01" value={editPrice} onChange={e => setEditPrice(e.target.value)} className="w-24 px-2 py-1 bg-neutral-950 border border-neutral-800 text-white rounded focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="Preço" />
                           <input type="number" min="0" step="0.01" value={editCostPrice} onChange={e => setEditCostPrice(e.target.value)} className="w-24 px-2 py-1 bg-neutral-950 border border-neutral-800 text-white rounded focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="Custo" />
                         </td>
-                        <td className="px-6 py-4">
-                          <input type="number" min="0" value={editStock} onChange={e => setEditStock(e.target.value)} className="w-20 px-2 py-1 bg-neutral-950 border border-neutral-800 text-white rounded focus:ring-2 focus:ring-emerald-500 outline-none" />
+                        <td className="px-6 py-4 flex flex-col gap-2">
+                          <input type="number" min="0" value={editStock} onChange={e => setEditStock(e.target.value)} className="w-20 px-2 py-1 bg-neutral-950 border border-neutral-800 text-white rounded focus:ring-2 focus:ring-emerald-500 outline-none" title="Estoque Atual" placeholder="Qtd" />
+                          <input type="number" min="0" value={editMinStock} onChange={e => setEditMinStock(e.target.value)} className="w-20 px-2 py-1 bg-neutral-950 border border-neutral-800 text-white rounded focus:ring-2 focus:ring-emerald-500 outline-none" title="Estoque Mínimo" placeholder="Mín" />
                         </td>
                         <td className="px-6 py-4 text-right">
                           <button onClick={() => saveEdit(product.id)} className="text-emerald-500 hover:text-emerald-400 mr-3 p-1 rounded hover:bg-emerald-500/10">
@@ -343,7 +356,7 @@ export default function Products() {
                             )}
                             <div className="flex items-center gap-2">
                               <span className="font-medium text-white">{product.name}</span>
-                              {product.stock < 10 && (
+                              {isLowStock && (
                                 <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500/10 text-red-500 uppercase tracking-wider shrink-0" title="Estoque abaixo do recomendado">
                                   <AlertTriangle className="h-3 w-3" />
                                   Baixo
@@ -361,11 +374,18 @@ export default function Products() {
                           )}
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                            product.stock < 10 ? 'bg-red-500/10 text-red-500' : 'bg-emerald-500/10 text-emerald-400'
-                          }`}>
-                            {product.stock} un.
-                          </span>
+                          <div className="flex flex-col gap-1 items-start">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                              isLowStock ? 'bg-red-500/10 text-red-500' : 'bg-emerald-500/10 text-emerald-400'
+                            }`}>
+                              {product.stock} un.
+                            </span>
+                            {product.minStock !== undefined && (
+                              <span className="text-[10px] text-neutral-500">
+                                Min: {product.minStock} un.
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-6 py-4 text-right">
                           <button onClick={() => startEditing(product)} className="text-neutral-500 hover:text-emerald-400 mr-3">
@@ -378,7 +398,8 @@ export default function Products() {
                       </>
                     )}
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>

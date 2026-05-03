@@ -1,13 +1,16 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ShoppingCart, Package, Users, LogOut, Menu, Wallet, Settings, Shield, Moon, Sun, Download } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Package, Users, LogOut, Menu, Wallet, Settings, Shield, Moon, Sun, Download, Bell, X, AlertTriangle } from 'lucide-react';
 import { useStore } from '../lib/store';
 import { useState, useEffect } from 'react';
 import { cn } from '../lib/utils';
 
 export default function AppLayout() {
   const location = useLocation();
-  const { user, logout, theme, toggleTheme } = useStore();
+  const { user, logout, theme, toggleTheme, products } = useStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+
+  const lowStockProducts = products.filter(p => p.minStock !== undefined ? p.stock <= p.minStock : p.stock < 10);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -31,11 +34,22 @@ export default function AppLayout() {
     <div className="flex h-screen bg-neutral-950 text-white overflow-hidden">
       {/* Sidebar for Desktop */}
       <aside className="hidden md:flex flex-col w-64 bg-neutral-900 border-r border-neutral-800">
-        <div className="h-16 flex items-center px-6 border-b border-neutral-800">
-          <div className="h-8 w-8 bg-emerald-500 rounded-lg flex items-center justify-center mr-3 shadow-[0_0_10px_rgba(16,185,129,0.3)]">
-            <span className="text-neutral-950 font-black text-lg">G</span>
+        <div className="relative h-16 flex items-center justify-between px-6 border-b border-neutral-800">
+          <div className="flex items-center">
+            <div className="h-8 w-8 bg-emerald-500 rounded-lg flex items-center justify-center mr-3 shadow-[0_0_10px_rgba(16,185,129,0.3)]">
+              <span className="text-neutral-950 font-black text-lg">G</span>
+            </div>
+            <span className="font-bold text-lg text-white tracking-tight">Gestor MZ</span>
           </div>
-          <span className="font-bold text-lg text-white tracking-tight">Gestor MZ</span>
+          <button 
+            onClick={() => setIsNotificationsOpen(true)}
+            className="relative p-2 text-neutral-400 hover:text-white transition-colors rounded-lg hover:bg-neutral-800"
+          >
+            <Bell className="h-5 w-5" />
+            {lowStockProducts.length > 0 && (
+              <span className="absolute top-1 right-1 h-2.5 w-2.5 bg-red-500 rounded-full border-2 border-neutral-900 animate-pulse"></span>
+            )}
+          </button>
         </div>
         
         <div className="flex-1 overflow-y-auto py-4">
@@ -123,6 +137,15 @@ export default function AppLayout() {
             >
               {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </button>
+            <button
+              onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+              className="relative p-2 text-neutral-400 hover:text-white rounded-lg"
+            >
+              <Bell className="h-5 w-5" />
+              {lowStockProducts.length > 0 && (
+                <span className="absolute top-1 right-1 h-2.5 w-2.5 bg-red-500 rounded-full border-2 border-neutral-900 animate-pulse"></span>
+              )}
+            </button>
             <button 
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 text-neutral-400 hover:text-white focus:outline-none"
@@ -176,6 +199,60 @@ export default function AppLayout() {
           <Outlet />
         </main>
       </div>
+
+      {/* Notifications Modal Overlay */}
+      {isNotificationsOpen && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center sm:justify-end bg-black/50 p-4 sm:p-6" onClick={() => setIsNotificationsOpen(false)}>
+          <div className="bg-neutral-900 border border-neutral-800 rounded-xl shadow-2xl w-full max-w-md max-h-[85vh] flex flex-col mt-12 sm:mt-0 animate-in slide-in-from-top-4 sm:slide-in-from-right-8" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-neutral-800">
+              <div className="flex items-center gap-2">
+                <Bell className="h-5 w-5 text-emerald-400" />
+                <h2 className="text-lg font-bold text-white">Notificações</h2>
+              </div>
+              <button onClick={() => setIsNotificationsOpen(false)} className="text-neutral-400 hover:text-white transition-colors">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-2">
+              {lowStockProducts.length === 0 ? (
+                <div className="p-8 text-center flex flex-col items-center">
+                  <div className="h-12 w-12 rounded-full bg-neutral-800 flex items-center justify-center mb-3">
+                    <Bell className="h-6 w-6 text-neutral-500" />
+                  </div>
+                  <p className="text-neutral-400 font-medium">Nenhuma notificação</p>
+                  <p className="text-neutral-500 text-sm mt-1">Seu estoque está sob controle.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="px-2 pt-2 pb-1 text-sm font-medium text-neutral-500 uppercase tracking-wider">Estoque Baixo ({lowStockProducts.length})</p>
+                  {lowStockProducts.map(product => (
+                    <div key={product.id} className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-start gap-3">
+                      <div className="mt-0.5">
+                        <AlertTriangle className="h-5 w-5 text-red-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-bold text-red-400">{product.name}</h4>
+                        <div className="flex items-center gap-2 mt-1">
+                          <p className="text-xs text-neutral-300">
+                            Estoque atual: <span className="font-bold text-white">{product.stock} un.</span>
+                          </p>
+                          <span className="text-neutral-600 text-xs">•</span>
+                          <p className="text-xs text-neutral-400">
+                            Mín: {product.minStock !== undefined ? product.minStock : 10} un.
+                          </p>
+                        </div>
+                      </div>
+                      <Link to="/products" onClick={() => setIsNotificationsOpen(false)} className="text-xs bg-neutral-800 text-white px-2 py-1 rounded hover:bg-neutral-700 transition">
+                        Ver
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

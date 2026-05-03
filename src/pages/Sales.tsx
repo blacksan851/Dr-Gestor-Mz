@@ -5,10 +5,11 @@ import { Search, Plus, Minus, Trash2, CreditCard, Banknote, Smartphone, Shopping
 import ReceiptModal from '../components/ReceiptModal';
 
 export default function Sales() {
-  const { products, cart, addToCart, removeFromCart, checkout, clearCart, categories, sales } = useStore();
+  const { products, cart, addToCart, removeFromCart, checkout, clearCart, categories, sales, customers } = useStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('Dinheiro');
+  const [selectedCustomerId, setSelectedCustomerId] = useState('');
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [lastSale, setLastSale] = useState<any>(null);
@@ -23,7 +24,12 @@ export default function Sales() {
 
   const handleCheckout = () => {
     if (cart.length === 0) return;
-    checkout(paymentMethod);
+    if (paymentMethod === 'Fiado' && !selectedCustomerId) {
+      alert('Selecione um cliente para venda a Fiado.');
+      return;
+    }
+    
+    checkout(paymentMethod, selectedCustomerId);
     
     // Pick the most recent sale from the store (it's un-updated in this render frame, so we use a small timeout or wait for next render)
     setTimeout(() => {
@@ -211,6 +217,7 @@ export default function Sales() {
                 { name: 'M-Pesa', icon: Smartphone },
                 { name: 'e-Mola', icon: Smartphone },
                 { name: 'Cartão', icon: CreditCard },
+                { name: 'Fiado', icon: CheckCircle },
               ].map(method => (
                 <button
                   key={method.name}
@@ -228,6 +235,22 @@ export default function Sales() {
             </div>
           </div>
 
+          {paymentMethod === 'Fiado' && (
+            <div className="mb-4">
+              <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Cliente para Fiado</label>
+              <select
+                value={selectedCustomerId}
+                onChange={(e) => setSelectedCustomerId(e.target.value)}
+                className="w-full bg-neutral-950 border border-neutral-800 text-white rounded-lg p-3 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
+              >
+                <option value="">Selecione um cliente</option>
+                {customers.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div className="flex items-center justify-between mb-4">
             <span className="text-neutral-400 font-medium">Total</span>
             <span className="text-2xl font-bold text-emerald-400">{formatCurrency(cartTotal)}</span>
@@ -235,7 +258,7 @@ export default function Sales() {
           
           <button 
             onClick={handleCheckout}
-            disabled={cart.length === 0}
+            disabled={cart.length === 0 || (paymentMethod === 'Fiado' && !selectedCustomerId)}
              className="w-full bg-emerald-600 text-white font-bold py-4 rounded-xl hover:bg-emerald-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-[0_0_15px_rgba(16,185,129,0.3)] disabled:shadow-none"
           >
             <span>Finalizar Venda</span>

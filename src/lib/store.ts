@@ -20,6 +20,7 @@ export type Product = {
   price: number;
   costPrice?: number;
   stock: number;
+  minStock?: number;
   category: string;
   barcode?: string;
   image?: string;
@@ -76,7 +77,7 @@ interface AppState {
   addToCart: (product: Product) => void;
   removeFromCart: (productId: string) => void;
   clearCart: () => void;
-  checkout: (paymentMethod: string) => void;
+  checkout: (paymentMethod: string, customerId?: string) => void;
   sales: any[];
   theme: 'dark' | 'light';
   toggleTheme: () => void;
@@ -221,15 +222,31 @@ export const useStore = create<AppState>((set) => ({
       sellerName: 'Maria Santos'
     }
   ],
-  checkout: (paymentMethod) => set((state) => {
+  checkout: (paymentMethod, customerId) => set((state) => {
     if (state.cart.length === 0) return state;
     const total = state.cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
     const totalCost = state.cart.reduce((acc, item) => acc + (item.costPrice || 0) * item.quantity, 0);
+    
+    let customerName;
+    let updatedCustomers = state.customers;
+
+    if (paymentMethod === 'Fiado' && customerId) {
+      const customer = state.customers.find(c => c.id === customerId);
+      if (customer) {
+        customerName = customer.name;
+        updatedCustomers = state.customers.map(c => 
+          c.id === customerId ? { ...c, balance: c.balance + total } : c
+        );
+      }
+    }
+
     const newSale = {
       id: Math.random().toString(36).substr(2, 9),
       total,
       totalCost,
       paymentMethod,
+      customerId,
+      customerName,
       date: new Date().toISOString(),
       items: state.cart,
       sellerId: state.user?.id || 'unknown',
@@ -245,7 +262,8 @@ export const useStore = create<AppState>((set) => ({
     return { 
       cart: [], 
       sales: [newSale, ...state.sales],
-      products: updatedProducts
+      products: updatedProducts,
+      customers: updatedCustomers
     };
   }),
   theme: 'dark',

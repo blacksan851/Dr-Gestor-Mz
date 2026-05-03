@@ -128,7 +128,18 @@ export default function Customers() {
                 </td>
                 <td className="px-6 py-4 text-right">
                   <div className="flex justify-end gap-2">
-                    <button onClick={() => setFormData({...c, balance: 0, status: c.status as any})} className="text-sm px-3 py-1 bg-neutral-800 hover:bg-neutral-700 rounded text-neutral-300 font-medium transition-colors">Liquidar Dívida</button>
+                    {c.balance > 0 && (
+                      <button 
+                        onClick={() => {
+                          if(confirm(`Tem certeza que deseja liquidar a dívida de ${formatCurrency(c.balance)} do cliente ${c.name}?`)) {
+                            updateCustomer({...c, balance: 0});
+                          }
+                        }} 
+                        className="text-sm px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 rounded text-emerald-400 font-medium transition-colors"
+                      >
+                        Liquidar Dívida
+                      </button>
+                    )}
                     <button onClick={() => handleEdit(c)} className="text-neutral-400 hover:text-emerald-400 p-2 rounded hover:bg-emerald-500/10 transition-colors"><Edit size={16}/></button>
                     <button onClick={() => { if(confirm('Apagar cliente?')) deleteCustomer(c.id) }} className="text-neutral-400 hover:text-red-500 p-2 rounded hover:bg-red-500/10 transition-colors"><Trash2 size={16}/></button>
                   </div>

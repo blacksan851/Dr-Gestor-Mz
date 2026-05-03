@@ -15,15 +15,85 @@ async function initDatabase() {
       return;
     }
     
+    // 1. Users
     await sql`
       CREATE TABLE IF NOT EXISTS users (
         id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        email VARCHAR(255) UNIQUE NOT NULL,
+        username VARCHAR(255) NOT NULL,
         password_hash VARCHAR(255) NOT NULL,
-        company_name VARCHAR(255),
-        role VARCHAR(50) DEFAULT 'owner',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        role VARCHAR(50) NOT NULL DEFAULT 'owner',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        display_name VARCHAR(255),
+        email VARCHAR(255),
+        phone_number VARCHAR(50)
+      );
+    `;
+
+    // 2. Products
+    await sql`
+      CREATE TABLE IF NOT EXISTS products (
+        id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        price DECIMAL(10, 2) NOT NULL,
+        stock_quantity INT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        description TEXT,
+        category VARCHAR(255),
+        barcode VARCHAR(255)
+      );
+    `;
+
+    // 3. Customers
+    await sql`
+      CREATE TABLE IF NOT EXISTS customers (
+        id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        phone_number VARCHAR(50),
+        email VARCHAR(255),
+        address TEXT,
+        credit_limit DECIMAL(10, 2),
+        current_credit_balance DECIMAL(10, 2) DEFAULT 0
+      );
+    `;
+
+    // 4. Sales
+    await sql`
+      CREATE TABLE IF NOT EXISTS sales (
+        id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+        sale_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        total_amount DECIMAL(10, 2) NOT NULL,
+        payment_method VARCHAR(50) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        processed_by_id UUID REFERENCES users(id),
+        customer_id UUID REFERENCES customers(id)
+      );
+    `;
+
+    // 5. Sale Items
+    await sql`
+      CREATE TABLE IF NOT EXISTS sale_items (
+        id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+        quantity INT NOT NULL,
+        unit_price DECIMAL(10, 2) NOT NULL,
+        subtotal DECIMAL(10, 2) NOT NULL,
+        sale_id UUID REFERENCES sales(id) ON DELETE CASCADE,
+        product_id UUID REFERENCES products(id),
+        discount DECIMAL(10, 2) DEFAULT 0
+      );
+    `;
+
+    // 6. Credit Transactions
+    await sql`
+      CREATE TABLE IF NOT EXISTS credit_transactions (
+        id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+        transaction_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        amount DECIMAL(10, 2) NOT NULL,
+        type VARCHAR(50) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        customer_id UUID REFERENCES customers(id) ON DELETE CASCADE,
+        sale_id UUID REFERENCES sales(id) ON DELETE SET NULL,
+        description TEXT
       );
     `;
     console.log('Database tables verified/created successfully.');
@@ -50,7 +120,7 @@ app.post('/api/auth/register', async (req, res) => {
     }
 
     // Check if user already exists
-    const existingUser = await sql`SELECT * FROM users WHERE email = ${email}`;
+    const existingUser = await sql`SELECT * FROM users WHERE email = ${email} OR username = ${email}`;
     if ((existingUser.rowCount ?? 0) > 0) {
       return res.status(409).json({ error: 'Email já está em uso' });
     }
@@ -61,9 +131,9 @@ app.post('/api/auth/register', async (req, res) => {
 
     // Insert user
     const result = await sql`
-      INSERT INTO users (name, email, password_hash, company_name)
-      VALUES (${name}, ${email}, ${passwordHash}, ${companyName || ''})
-      RETURNING id, name, email, company_name as "companyName", role;
+      INSERT INTO users (username, display_name, email, password_hash, role)
+      VALUES (${email}, ${name}, ${email}, ${passwordHash}, 'owner')
+      RETURNING id, display_name as name, email, role;
     `;
 
     const user = result.rows[0];
@@ -96,7 +166,7 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     // Find user
-    const result = await sql`SELECT id, name, email, password_hash, company_name as "companyName", role FROM users WHERE email = ${email}`;
+    const result = await sql`SELECT id, display_name as name, username, email, password_hash, role FROM users WHERE email = ${email} OR username = ${email}`;
     const user = result.rows[0];
 
     if (!user) {
@@ -114,7 +184,6 @@ app.post('/api/auth/login', async (req, res) => {
       id: user.id,
       name: user.name,
       email: user.email,
-      companyName: user.companyName,
       role: user.role
     };
 
